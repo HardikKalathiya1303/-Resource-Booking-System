@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 import { Resource } from '../resources/resource.entity';
 import { toUtc, weekdayInZone } from '../common/timezone.util';
+import { isInSpringForwardGap, isUniqueUtcSlot } from '../common/dst.util';
 
 export interface Slot {
   startUtc: string;   // ISO UTC string — stored in DB
@@ -15,8 +16,9 @@ export interface Slot {
  * Steps:
  *  1. Find which day of week this date is in the resource's own timezone
  *  2. Find matching availability windows for that day
- *  3. Walk the window in slotDurationMinutes steps
- *  4. Convert each slot boundary from local time to UTC via Luxon (DST-safe)
+ *  3. Walk the window in slotDurationMinutes steps (in UTC — DST-safe)
+ *  4. Skip spring-forward gap slots (they don't exist in local time)
+ *  5. Deduplicate fall-back slots (same UTC instant can't appear twice)
  *
  * Half-open intervals: slot [09:00, 10:00) and [10:00, 11:00) never overlap.
  */
@@ -31,22 +33,40 @@ export function generateSlotsForDate(resource: Resource, date: string): Slot[] {
 
   const slots: Slot[] = [];
 
+  // Tracks UTC instants already added — prevents fall-back duplicates
+  const seenUtc = new Set<string>();
+
   for (const window of windows) {
-    // Step 3 — convert window boundaries to UTC DateTime via Luxon
+    // Convert window boundaries to UTC — Luxon applies correct DST offset
     let current = toUtc(date, window.startTime, timezone);
     const windowEnd = toUtc(date, window.endTime, timezone);
 
-    // Step 4 — walk the window in fixed steps
+    // Walk the window in fixed UTC steps — timezone offset changes don't affect this
     while (current < windowEnd) {
       const next = current.plus({ minutes: slotDurationMinutes });
 
-      // Only include slot if it fits completely inside the window
       if (next > windowEnd) break;
 
+      const startIso = current.toISO();
+      const startLocal = current.setZone(timezone).toFormat('HH:mm');
+
+      // Guard 1 — skip if this wall-clock time is in a spring-forward gap
+      // (Luxon silently shifted it, so round-trip local time won't match)
+      if (isInSpringForwardGap(date, startLocal, timezone)) {
+        current = next;
+        continue;
+      }
+
+      // Guard 2 — skip duplicate UTC slots caused by fall-back
+      if (!isUniqueUtcSlot(startIso, seenUtc)) {
+        current = next;
+        continue;
+      }
+
       slots.push({
-        startUtc: current.toISO(),
+        startUtc: startIso,
         endUtc: next.toISO(),
-        startLocal: current.setZone(timezone).toFormat('HH:mm'),
+        startLocal,
         endLocal: next.setZone(timezone).toFormat('HH:mm'),
       });
 
@@ -59,7 +79,7 @@ export function generateSlotsForDate(resource: Resource, date: string): Slot[] {
 
 /**
  * Generate slots for a range of dates (inclusive).
- * Returns a flat list grouped by date in the resource's timezone.
+ * Returns slots grouped by calendar date in the resource's timezone.
  */
 export function generateSlotsForRange(
   resource: Resource,
