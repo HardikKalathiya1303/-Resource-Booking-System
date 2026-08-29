@@ -1,5 +1,5 @@
 import React from 'react';
-import { Resource } from '../types';
+import type { Resource } from '../types';
 
 interface Props {
   resources: Resource[];

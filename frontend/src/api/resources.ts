@@ -1,5 +1,5 @@
 import api from './client';
-import { Resource, SlotsResponse, Booking } from '../types';
+import type { Resource, SlotsResponse, Booking } from '../types';
 
 export async function fetchResources(): Promise<Resource[]> {
   const res = await api.get<Resource[]>('/resources');

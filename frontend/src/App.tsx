@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Resource, Slot } from './types';
+import type { Resource, Slot } from './types';
 import { fetchResources, fetchSlots } from './api/resources';
 import ResourceSelector from './components/ResourceSelector';
 import DatePicker from './components/DatePicker';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Slot, Resource, ApiError } from '../types';
+import type { Slot, Resource, ApiError } from '../types';
 import { createBooking } from '../api/resources';
 import { AxiosError } from 'axios';
 

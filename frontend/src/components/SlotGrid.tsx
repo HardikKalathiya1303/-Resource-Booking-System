@@ -1,5 +1,5 @@
 import React from 'react';
-import { Slot } from '../types';
+import type { Slot } from '../types';
 
 interface Props {
   slots: Slot[];
