@@ -7,7 +7,16 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors({ origin: 'http://localhost:5173' });
+  // Allow both local dev (Vite) and Docker (nginx on 5173)
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:80',
+    'http://localhost',
+  ];
+  app.enableCors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+  });
 
   // Global validation — rejects unknown fields, transforms types
   app.useGlobalPipes(
