@@ -1,6 +1,6 @@
-import { Controller, Get, Param, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { SlotsService } from './slots.service';
-import { DateTime } from 'luxon';
+import { GetSlotsDto } from './dto/get-slots.dto';
 
 @Controller('resources/:resourceId/slots')
 export class SlotsController {
@@ -10,21 +10,19 @@ export class SlotsController {
   @Get()
   async getSlots(
     @Param('resourceId') resourceId: string,
-    @Query('date') date: string,
-    @Query('timezone') timezone: string,
+    @Query() query: GetSlotsDto,
   ) {
-    if (!date || !DateTime.fromISO(date).isValid) {
-      throw new BadRequestException('date query param must be a valid YYYY-MM-DD string');
-    }
+    const userTimezone = query.timezone || 'UTC';
 
-    // Default to UTC if no user timezone provided
-    const userTimezone = timezone || 'UTC';
-
-    const slots = await this.service.getSlotsForDate(resourceId, date, userTimezone);
+    const slots = await this.service.getSlotsForDate(
+      resourceId,
+      query.date,
+      userTimezone,
+    );
 
     return {
       resourceId,
-      date,
+      date: query.date,
       userTimezone,
       slots,
     };

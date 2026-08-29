@@ -1,8 +1,7 @@
-import { IsString, IsNotEmpty, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsDateString, IsUUID } from 'class-validator';
 
 export class CreateBookingDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID()
   resourceId: string;
 
   // Simple userId — no auth required per task spec
@@ -10,7 +9,7 @@ export class CreateBookingDto {
   @IsNotEmpty()
   userId: string;
 
-  // UTC ISO string — e.g. "2025-06-15T09:00:00.000Z"
+  // UTC ISO 8601 string — e.g. "2025-06-15T09:00:00.000Z"
   @IsDateString()
   startUtc: string;
 
