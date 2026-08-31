@@ -3,7 +3,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 // Seed data inserted via migration so it runs automatically on `migrationsRun: true`
 // dayOfWeek: 1=Monday … 7=Sunday (ISO 8601)
 
-export class SeedResources1003 implements MigrationInterface {
+export class SeedResources1700000003000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       INSERT INTO resources (name, description, timezone, availability, "slotDurationMinutes")
